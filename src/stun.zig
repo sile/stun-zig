@@ -1,3 +1,6 @@
+pub const rfc5389 = @import("rfc5389.zig");
+
+const std = @import("std");
 const message = @import("message.zig");
 const attribute = @import("attribute.zig");
 
@@ -15,4 +18,28 @@ pub const Padding = attribute.Padding;
 
 test {
     _ = @import("message.zig");
+}
+
+test "Decode and encode" {
+    const bytes = [_]u8{ 0, 1, 0, 8, 33, 18, 164, 66, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 128, 34, 0, 3, 102, 111, 111, 0 };
+
+    const TestAttributeType = enum(u16) {
+        error_code = rfc5389.attributes.ErrorCode.attrType(),
+    };
+
+    const TestMessage = Message(rfc5389.UnionAttribute(union(TestAttributeType) {
+        error_code: rfc5389.attributes.ErrorCode,
+    }));
+
+    // Decode.
+    const reader = std.io.fixedBufferStream(&bytes).reader();
+    const msg = try TestMessage.decode(std.testing.allocator, reader);
+    defer msg.deinit();
+
+    // Encode.
+    var buf = std.ArrayList(u8).init(std.testing.allocator);
+    defer buf.deinit();
+
+    try msg.encode(buf.writer());
+    try std.testing.expect(std.mem.eql(u8, &bytes, buf.items));
 }

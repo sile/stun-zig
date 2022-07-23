@@ -69,6 +69,11 @@ pub const Padding = struct {
         };
     }
 
+    pub fn fromValueLen(value_len: usize) Self {
+        const len = (4 - value_len % 4) % 4;
+        return .{ .data = .{ 0, 0, 0, 0 }, .len = len };
+    }
+
     pub fn decode(reader: anytype) !Self {
         var data: [4]u8 = undefined;
         const len = try reader.readAll(&data);

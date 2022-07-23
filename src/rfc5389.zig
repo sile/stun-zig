@@ -19,6 +19,14 @@ pub const errors = struct {
 };
 
 pub const Attribute = stun.UnionAttribute(union(enum) {
-    error_code: ErrorCode,
-    unknown: stun.RawAttribute,
+    alternate_server: attributes.AlternateServer,
+    error_code: attributes.ErrorCode,
+    fingerprint: attributes.Fingerprint,
+    mapped_address: attributes.MappedAddress,
+    message_integrity: attributes.MessageIntegrity,
+    nonce: attributes.Nonce,
+    realm: attributes.Realm,
+    software: attributes.Software,
+    unknown_attributes: attributes.UnknownAttributes,
+    other: stun.RawAttribute,
 });

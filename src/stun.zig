@@ -1,3 +1,4 @@
+pub const net = @import("net.zig");
 pub const rfc5389 = @import("rfc5389.zig");
 
 const std = @import("std");

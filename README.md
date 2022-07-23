@@ -18,7 +18,7 @@ Run UDP STUN (BIDNING) server:
 $ zig run examples/binding-srv-udp.zig --main-pkg-path ../
 ```
 
-RUN UDP STUN (BINDING) client:
+Run UDP STUN (BINDING) client:
 ```console
 $ zig run examples/binding-cli-udp.zig --main-pkg-path ../ -- 127.0.0.1 3478
 Binding response from 127.0.0.1:3478

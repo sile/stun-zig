@@ -5,6 +5,7 @@ const Padding = stun.Padding;
 
 pub const ErrorCode = struct {
     const Self = @This();
+    const expected_attr_type = 0x0009;
 
     allocator: ?Allocator = null,
 
@@ -21,7 +22,7 @@ pub const ErrorCode = struct {
     }
 
     pub fn decode(allocator: Allocator, attr_type: u16, reader: anytype, value_len: u16) !Self {
-        if (attr_type != Self.attrType()) {
+        if (attr_type != expected_attr_type) {
             return error.AttributeTypeMismatch;
         }
 
@@ -52,11 +53,12 @@ pub const ErrorCode = struct {
     }
 
     pub fn canDecode(attr_type: u16) bool {
-        return attr_type == Self.attrType();
+        return attr_type == expected_attr_type;
     }
 
-    pub fn attrType() u16 {
-        return 0x0009;
+    pub fn attrType(self: Self) u16 {
+        _ = self;
+        return expected_attr_type;
     }
 
     pub fn valueLen(self: Self) u16 {
@@ -67,7 +69,7 @@ pub const ErrorCode = struct {
         return self.padding.len;
     }
 
-    pub fn deinit(self: Self) !void {
+    pub fn deinit(self: Self) void {
         if (self.allocator) |allocator| {
             allocator.free(self.reason_phrase);
         }

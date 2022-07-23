@@ -14,6 +14,7 @@ pub const Method = u12;
 pub const TransactionId = [12]u8;
 pub const Message = message.Message;
 pub const RawAttribute = attribute.RawAttribute;
+pub const UnionAttribute = attribute.UnionAttribute;
 pub const Padding = attribute.Padding;
 
 test {
@@ -23,13 +24,7 @@ test {
 test "Decode and encode" {
     const bytes = [_]u8{ 0, 1, 0, 8, 33, 18, 164, 66, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 128, 34, 0, 3, 102, 111, 111, 0 };
 
-    const TestAttributeType = enum(u16) {
-        error_code = rfc5389.attributes.ErrorCode.attrType(),
-    };
-
-    const TestMessage = Message(rfc5389.UnionAttribute(union(TestAttributeType) {
-        error_code: rfc5389.attributes.ErrorCode,
-    }));
+    const TestMessage = Message(rfc5389.Attribute);
 
     // Decode.
     const reader = std.io.fixedBufferStream(&bytes).reader();

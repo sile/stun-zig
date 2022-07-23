@@ -52,6 +52,139 @@ pub const RawAttribute = struct {
     }
 };
 
+pub fn UnionAttribute(comptime T: type) type {
+    return struct {
+        const Self = @This();
+
+        attr: T,
+
+        pub fn decode(allocator: Allocator, attr_type: u16, reader: anytype, value_len: u16) !Self {
+            switch (@typeInfo(T)) {
+                .Union => |attrs| {
+                    if (attrs.tag_type == null) {
+                        @panic("not a tagged union");
+                    }
+
+                    inline for (attrs.fields) |field| {
+                        if (field.field_type.canDecode(attr_type)) {
+                            const attr = try field.field_type.decode(
+                                allocator,
+                                attr_type,
+                                reader,
+                                value_len,
+                            );
+                            return Self{ .attr = @unionInit(T, field.name, attr) };
+                        }
+                    }
+                },
+                else => @panic("not a union type"),
+            }
+
+            return error.UnexpectedAttributeType;
+        }
+
+        pub fn encode(self: Self, writer: anytype) !void {
+            switch (@typeInfo(T)) {
+                .Union => |attrs| {
+                    const tag_type = attrs.tag_type orelse @panic("not a tagged union");
+                    switch (@typeInfo(tag_type)) {
+                        .Enum => |enum_info| {
+                            inline for (enum_info.fields) |field| {
+                                if (field.value == @enumToInt(self.attr)) {
+                                    try @field(self.attr, field.name).encode(writer);
+                                    return;
+                                }
+                            }
+                        },
+                        else => unreachable,
+                    }
+                },
+                else => @panic("not a union type"),
+            }
+        }
+
+        pub fn attrType(self: Self) u16 {
+            switch (@typeInfo(T)) {
+                .Union => |attrs| {
+                    const tag_type = attrs.tag_type orelse @panic("not a tagged union");
+                    switch (@typeInfo(tag_type)) {
+                        .Enum => |enum_info| {
+                            inline for (enum_info.fields) |field| {
+                                if (field.value == @enumToInt(self.attr)) {
+                                    return @field(self.attr, field.name).attrType();
+                                }
+                            }
+                            unreachable;
+                        },
+                        else => unreachable,
+                    }
+                },
+                else => @panic("not a union type"),
+            }
+        }
+
+        pub fn valueLen(self: Self) u16 {
+            switch (@typeInfo(T)) {
+                .Union => |attrs| {
+                    const tag_type = attrs.tag_type orelse @panic("not a tagged union");
+                    switch (@typeInfo(tag_type)) {
+                        .Enum => |enum_info| {
+                            inline for (enum_info.fields) |field| {
+                                if (field.value == @enumToInt(self.attr)) {
+                                    return @field(self.attr, field.name).valueLen();
+                                }
+                            }
+                            unreachable;
+                        },
+                        else => unreachable,
+                    }
+                },
+                else => @panic("not a union type"),
+            }
+        }
+
+        pub fn paddingLen(self: Self) u16 {
+            switch (@typeInfo(T)) {
+                .Union => |attrs| {
+                    const tag_type = attrs.tag_type orelse @panic("not a tagged union");
+                    switch (@typeInfo(tag_type)) {
+                        .Enum => |enum_info| {
+                            inline for (enum_info.fields) |field| {
+                                if (field.value == @enumToInt(self.attr)) {
+                                    return @field(self.attr, field.name).paddingLen();
+                                }
+                            }
+                            unreachable;
+                        },
+                        else => unreachable,
+                    }
+                },
+                else => @panic("not a union type"),
+            }
+        }
+
+        pub fn deinit(self: Self) void {
+            switch (@typeInfo(T)) {
+                .Union => |attrs| {
+                    const tag_type = attrs.tag_type orelse @panic("not a tagged union");
+                    switch (@typeInfo(tag_type)) {
+                        .Enum => |enum_info| {
+                            inline for (enum_info.fields) |field| {
+                                if (field.value == @enumToInt(self.attr)) {
+                                    @field(self.attr, field.name).deinit();
+                                    return;
+                                }
+                            }
+                        },
+                        else => unreachable,
+                    }
+                },
+                else => @panic("not a union type"),
+            }
+        }
+    };
+}
+
 pub const Padding = struct {
     const Self = @This();
 

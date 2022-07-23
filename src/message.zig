@@ -18,13 +18,12 @@ pub fn Message(comptime AttributeType: type) type {
     return struct {
         const Self = @This();
 
+        allocator: ?Allocator = null,
+
         class: MessageClass,
-
         method: Method,
-
         transaction_id: TransactionId,
-
-        attributes: ArrayList(AttributeType),
+        attributes: []AttributeType,
 
         pub fn decode(allocator: Allocator, reader: anytype) !Self {
             const message_type = try reader.readIntBig(u16);
@@ -51,21 +50,24 @@ pub fn Message(comptime AttributeType: type) type {
                 (message_type & 0b0000_0000_1111) | ((message_type >> 1) & 0b0000_0111_0000) | ((message_type >> 2) & 0b1111_1000_0000),
             );
 
-            const attributes = try decodeAttributes(allocator, std.io.limitedReader(reader, message_len).reader());
+            var attributes = try decodeAttributes(allocator, std.io.limitedReader(reader, message_len).reader());
 
             return Self{
+                .allocator = allocator,
                 .class = class,
                 .method = method,
                 .transaction_id = transaction_id,
-                .attributes = attributes,
+                .attributes = attributes.toOwnedSlice(),
             };
         }
 
         pub fn deinit(self: Self) void {
-            for (self.attributes.items) |a| {
+            for (self.attributes) |a| {
                 a.deinit();
             }
-            self.attributes.deinit();
+            if (self.allocator) |allocator| {
+                allocator.free(self.attributes);
+            }
         }
 
         fn decodeAttributes(allocator: Allocator, reader: anytype) !ArrayList(AttributeType) {
@@ -104,30 +106,9 @@ pub fn Message(comptime AttributeType: type) type {
     };
 }
 
-fn tt(comptime T: type) type {
-    return T;
-}
-
-pub const Foo = struct {
-    const Self = @This();
-
-    attr_type: u16,
-
-    pub fn decode(allocator: Allocator, attr_type: u16, reader: anytype) !Self {
-        var buf: [512]u8 = undefined;
-        _ = try reader.readAll(&buf);
-        _ = allocator;
-        return Self{ .attr_type = attr_type };
-    }
-
-    pub fn deinit(self: Self) void {
-        _ = self;
-    }
-};
-
 test "decode" {
     const input = [_]u8{ 0, 1, 0, 8, 33, 18, 164, 66, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 128, 34, 0, 3, 102, 111, 111, 0 };
     const reader = std.io.fixedBufferStream(&input).reader();
-    const message = try Message(Foo).decode(std.testing.allocator, reader);
+    const message = try Message(stun.attribute.RawAttribute).decode(std.testing.allocator, reader);
     defer message.deinit();
 }

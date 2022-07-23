@@ -24,7 +24,6 @@ pub fn Message(comptime AttributeType: type) type {
             if (magic_cookie != stun.magic_cookie) {
                 return error.MagicCookieMismatch;
             }
-            std.debug.print("mesage_len: {d}\n", .{message_len});
 
             const transaction_id = try reader.readBytesNoEof(@sizeOf(TransactionId));
 
@@ -114,7 +113,6 @@ pub fn Message(comptime AttributeType: type) type {
                     }
                 };
                 const value_len = try reader.readIntBig(u16);
-                std.debug.print("attr_type: {d}, value_len: {d}\n", .{ attr_type, value_len });
                 const padding_len = (4 - value_len % 4) % 4;
                 const valueAndPaddingReader = std.io.limitedReader(reader, value_len + padding_len).reader();
                 const attribute = try AttributeType.decode(allocator, attr_type, valueAndPaddingReader, value_len);

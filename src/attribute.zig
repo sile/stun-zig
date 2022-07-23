@@ -28,6 +28,11 @@ pub const RawAttribute = struct {
         try self.padding.encode(writer);
     }
 
+    pub fn canDecode(attr_type: u16) bool {
+        _ = attr_type;
+        return true;
+    }
+
     pub fn attrType(self: Self) u16 {
         return self.attr_type;
     }

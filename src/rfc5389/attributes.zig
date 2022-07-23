@@ -30,15 +30,15 @@ pub const ErrorCode = struct {
         const number = value & 0xFF;
         const code = @intCast(u16, class * 100 + number);
 
-        const reason_phrase = try reader.readAllAlloc(value_len - @sizeOf(u32));
+        const reason_phrase = try reader.readAllAlloc(allocator, value_len - @sizeOf(u32));
 
-        const padding = Padding.decode(reader);
+        const padding = try Padding.decode(reader);
 
         return Self{
             .allocator = allocator,
             .code = code,
             .reason_phrase = reason_phrase,
-            .paddig = padding,
+            .padding = padding,
         };
     }
 
@@ -49,6 +49,10 @@ pub const ErrorCode = struct {
         try writer.writeAll(self.reason_phrase);
 
         try self.padding.encode(writer);
+    }
+
+    pub fn canDecode(attr_type: u16) bool {
+        return attr_type == Self.attrType();
     }
 
     pub fn attrType() u16 {

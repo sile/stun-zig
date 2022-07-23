@@ -32,6 +32,17 @@ test "Decode and encode" {
     const msg = try TestMessage.decode(std.testing.allocator, reader);
     defer msg.deinit();
 
+    var found = false;
+    for (msg.attributes) |attr| {
+        switch (attr.attr) {
+            .software => |software| {
+                found = true;
+                try std.testing.expect(std.mem.eql(u8, software.description, "foo"));
+            },
+            else => {},
+        }
+    }
+
     // Encode.
     var buf = std.ArrayList(u8).init(std.testing.allocator);
     defer buf.deinit();

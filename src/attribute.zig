@@ -12,8 +12,8 @@ pub const RawAttribute = struct {
     padding: Padding,
 
     pub fn decode(allocator: Allocator, attr_type: u16, reader: anytype, value_len: u16) !Self {
-        const valueReader = std.io.limitedReader(reader, value_len).reader();
-        const value = try valueReader.readAllAlloc(allocator, std.math.maxInt(u16));
+        var value = try allocator.alloc(u8, value_len);
+        try reader.readNoEof(value);
         const padding = try Padding.decode(reader);
         return Self{
             .allocator = allocator,

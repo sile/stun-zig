@@ -77,7 +77,8 @@ pub const ErrorCode = struct {
         const number = value & 0xFF;
         const code = @intCast(u16, class * 100 + number);
 
-        const reason_phrase = try reader.readAllAlloc(allocator, value_len - @sizeOf(u32));
+        var reason_phrase = try allocator.alloc(u8, value_len);
+        try reader.readNoEof(reason_phrase);
 
         const padding = try Padding.decode(reader);
 
@@ -282,7 +283,8 @@ pub const Nonce = struct {
         }
 
         // FIXME: Add length check.
-        const value = try reader.readAllAlloc(allocator, value_len);
+        var value = try allocator.alloc(u8, value_len);
+        try reader.readNoEof(value);
         const padding = try Padding.decode(reader);
 
         return Self{
@@ -343,7 +345,8 @@ pub const Realm = struct {
         }
 
         // FIXME: Add length check.
-        const text = try reader.readAllAlloc(allocator, value_len);
+        var text = try allocator.alloc(u8, value_len);
+        try reader.readNoEof(text);
         const padding = try Padding.decode(reader);
 
         return Self{
@@ -404,7 +407,8 @@ pub const Software = struct {
         }
 
         // FIXME: Add length check.
-        const description = try reader.readAllAlloc(allocator, value_len);
+        var description = try allocator.alloc(u8, value_len);
+        try reader.readNoEof(description);
         const padding = try Padding.decode(reader);
 
         return Self{
@@ -520,5 +524,111 @@ pub const UnknownAttributes = struct {
         if (self.allocator) |allocator| {
             allocator.free(self.unknown_attr_types);
         }
+    }
+};
+
+pub const Username = struct {
+    const Self = @This();
+    const expected_attr_type = 0x0006;
+
+    allocator: ?Allocator = null,
+
+    name: []u8,
+    padding: Padding,
+
+    pub fn new(name: []u8) Self {
+        return .{
+            .name = name,
+            .padding = Padding.fromValueLen(name.len),
+        };
+    }
+
+    pub fn decode(allocator: Allocator, attr_type: u16, reader: anytype, value_len: u16) !Self {
+        if (attr_type != expected_attr_type) {
+            return error.AttributeTypeMismatch;
+        }
+
+        // FIXME: Add length check.
+        var name = try allocator.alloc(u8, value_len);
+        try reader.readNoEof(name);
+        const padding = try Padding.decode(reader);
+
+        return Self{
+            .allocator = allocator,
+            .name = name,
+            .padding = padding,
+        };
+    }
+
+    pub fn encode(self: Self, writer: anytype) !void {
+        try writer.writeAll(self.name);
+        try self.padding.encode(writer);
+    }
+
+    pub fn canDecode(attr_type: u16) bool {
+        return attr_type == expected_attr_type;
+    }
+
+    pub fn attrType(self: Self) u16 {
+        _ = self;
+        return expected_attr_type;
+    }
+
+    pub fn valueLen(self: Self) u16 {
+        return @intCast(u16, self.name.len);
+    }
+
+    pub fn paddingLen(self: Self) u16 {
+        return self.padding.len;
+    }
+
+    pub fn deinit(self: Self) void {
+        if (self.allocator) |allocator| {
+            allocator.free(self.name);
+        }
+    }
+};
+
+pub const XorMappedAddress = struct {
+    const Self = @This();
+    const expected_attr_type = 0x0020;
+
+    xor_addr: net.Address,
+
+    pub fn decode(allocator: Allocator, attr_type: u16, reader: anytype, value_len: u16) !Self {
+        if (attr_type != expected_attr_type) {
+            return error.AttributeTypeMismatch;
+        }
+        _ = allocator;
+        _ = value_len; // FIXME: Check EOS
+
+        const addr = try stun.net.decodeAddress(reader);
+        return Self{ .xor_addr = addr };
+    }
+
+    pub fn encode(self: Self, writer: anytype) !void {
+        try stun.net.encodeAddress(writer, self.xor_addr);
+    }
+
+    pub fn canDecode(attr_type: u16) bool {
+        return attr_type == expected_attr_type;
+    }
+
+    pub fn attrType(self: Self) u16 {
+        _ = self;
+        return expected_attr_type;
+    }
+
+    pub fn valueLen(self: Self) u16 {
+        return @intCast(u16, 4 + self.xor_addr.getOsSockLen());
+    }
+
+    pub fn paddingLen(self: Self) u16 {
+        _ = self;
+        return 0;
+    }
+
+    pub fn deinit(self: Self) void {
+        _ = self;
     }
 };

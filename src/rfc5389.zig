@@ -28,5 +28,7 @@ pub const Attribute = stun.UnionAttribute(union(enum) {
     realm: attributes.Realm,
     software: attributes.Software,
     unknown_attributes: attributes.UnknownAttributes,
+    username: attributes.Username,
+    xor_mapped_address: attributes.XorMappedAddress,
     other: stun.RawAttribute,
 });

@@ -36,7 +36,7 @@ pub const AlternateServer = struct {
     }
 
     pub fn valueLen(self: Self) u16 {
-        return @intCast(u16, 4 + self.addr.getOsSockLen());
+        return stun.net.addressBytesLen(self.addr);
     }
 
     pub fn paddingLen(self: Self) u16 {
@@ -200,7 +200,7 @@ pub const MappedAddress = struct {
     }
 
     pub fn valueLen(self: Self) u16 {
-        return @intCast(u16, 4 + self.addr.getOsSockLen());
+        return stun.net.addressBytesLen(self.addr);
     }
 
     pub fn paddingLen(self: Self) u16 {
@@ -620,7 +620,7 @@ pub const XorMappedAddress = struct {
     }
 
     pub fn valueLen(self: Self) u16 {
-        return @intCast(u16, 4 + self.xor_addr.getOsSockLen());
+        return stun.net.addressBytesLen(self.xor_addr);
     }
 
     pub fn paddingLen(self: Self) u16 {

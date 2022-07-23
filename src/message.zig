@@ -6,8 +6,6 @@ const Method = stun.Method;
 const Class = stun.Class;
 const TransactionId = stun.TransactionId;
 
-pub const MAGIC_COOKIE: u32 = 0x2112_A442;
-
 pub fn Message(comptime AttributeType: type) type {
     return struct {
         const Self = @This();
@@ -23,9 +21,10 @@ pub fn Message(comptime AttributeType: type) type {
             const message_type = try reader.readIntBig(u16);
             const message_len = try reader.readIntBig(u16);
             const magic_cookie = try reader.readIntBig(u32);
-            if (magic_cookie != MAGIC_COOKIE) {
+            if (magic_cookie != stun.magic_cookie) {
                 return error.MagicCookieMismatch;
             }
+            std.debug.print("mesage_len: {d}\n", .{message_len});
 
             const transaction_id = try reader.readBytesNoEof(@sizeOf(TransactionId));
 
@@ -59,7 +58,7 @@ pub fn Message(comptime AttributeType: type) type {
             // Header.
             try writer.writeIntBig(u16, self.messageType());
             try writer.writeIntBig(u16, self.messageLen());
-            try writer.writeIntBig(u32, MAGIC_COOKIE);
+            try writer.writeIntBig(u32, stun.magic_cookie);
             try writer.writeAll(&self.transaction_id);
 
             // Attributes.
@@ -115,6 +114,7 @@ pub fn Message(comptime AttributeType: type) type {
                     }
                 };
                 const value_len = try reader.readIntBig(u16);
+                std.debug.print("attr_type: {d}, value_len: {d}\n", .{ attr_type, value_len });
                 const padding_len = (4 - value_len % 4) % 4;
                 const valueAndPaddingReader = std.io.limitedReader(reader, value_len + padding_len).reader();
                 const attribute = try AttributeType.decode(allocator, attr_type, valueAndPaddingReader, value_len);

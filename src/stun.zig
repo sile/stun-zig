@@ -5,6 +5,8 @@ const std = @import("std");
 const message = @import("message.zig");
 const attribute = @import("attribute.zig");
 
+pub const magic_cookie: u32 = 0x2112_A442;
+
 pub const Class = enum(u2) {
     request = 0b00,
     indication = 0b01,

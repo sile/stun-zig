@@ -16,6 +16,7 @@ pub fn main() !void {
     const server_addr = try net.Address.parseIp4(args[1], port);
     const client_addr = net.Address.initIp4(.{ 0, 0, 0, 0 }, 0);
 
+    // Bind.
     const socket = try os.socket(
         server_addr.any.family,
         os.SOCK.DGRAM,

@@ -32,15 +32,13 @@ fn worker() !void {
         os.SOCK.DGRAM,
         os.IPPROTO.UDP,
     );
-    defer {
-        os.closeSocket(socket);
-    }
+    defer os.closeSocket(socket);
 
     try std.os.setsockopt(socket, os.SOL.SOCKET, os.SO.REUSEADDR, &mem.toBytes(@as(c_int, 1)));
     try std.os.setsockopt(socket, os.SOL.SOCKET, os.SO.REUSEPORT, &mem.toBytes(@as(c_int, 1)));
     try os.bind(socket, &bind_addr.any, bind_addr.getOsSockLen());
 
-    var buf: [4096]u8 = undefined;
+    var buf: [1200]u8 = undefined;
     while (true) {
         // Recv.
         var transaction_id: stun.TransactionId = undefined;

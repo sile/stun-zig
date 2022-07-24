@@ -22,9 +22,7 @@ pub fn main() !void {
         os.SOCK.DGRAM,
         os.IPPROTO.UDP,
     );
-    defer {
-        os.closeSocket(socket);
-    }
+    defer os.closeSocket(socket);
     try os.bind(socket, &client_addr.any, client_addr.getOsSockLen());
 
     // Send.
@@ -36,7 +34,7 @@ pub fn main() !void {
         .attributes = &.{},
     };
 
-    var buf: [4096]u8 = undefined;
+    var buf: [1200]u8 = undefined;
     {
         var stream = std.io.fixedBufferStream(&buf);
         try request.encode(stream.writer());

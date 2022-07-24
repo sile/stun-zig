@@ -13,7 +13,7 @@ v0.9.1
 Examples
 --------
 
-Run UDP STUN (BIDNING) server:
+Run UDP STUN (BIＮDING) server:
 ```console
 $ zig run examples/binding-srv-udp.zig --main-pkg-path ../
 ```
